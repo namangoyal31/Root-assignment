@@ -3,6 +3,7 @@
 #include "TH1F.h"
 #include "TCanvas.h"
 #include "TLorentzVector.h"
+#include "TSystem.h"
 
 #include <vector>
 #include <iostream>
@@ -14,8 +15,14 @@
 
 void generatedZ_custom() {
 
+    // Load dictionary for custom particle classes
+    if (gSystem->Load("Question4/libMyParticles.so") < 0) {
+        std::cout << "Error loading libMyParticles.so" << std::endl;
+        return;
+    }
+
     // Open the new tree
-    TFile *f = TFile::Open("particleTree.root");
+    TFile *f = TFile::Open("Question4/particleTree.root");
 
     if (!f || f->IsZombie()) {
         std::cout << "Error opening particleTree.root" << std::endl;
@@ -26,6 +33,7 @@ void generatedZ_custom() {
 
     if (!T) {
         std::cout << "Error: tree T not found" << std::endl;
+        f->Close();
         return;
     }
 
@@ -52,29 +60,24 @@ void generatedZ_custom() {
 
         T->GetEntry(i);
 
-        // Look for opposite-charge same-flavour lepton pairs
+        bool foundPair = false;
+
+        // Look for an opposite-charge electron pair
         for (size_t j = 0; j < genParticles->size(); j++) {
 
-            // Only electrons or muons
-            if (std::abs(genParticles->at(j).pdgId) != 11 &&
-                std::abs(genParticles->at(j).pdgId) != 13)
+            // Only electrons / positrons
+            if (std::abs(genParticles->at(j).pdgId) != 11)
                 continue;
 
             for (size_t k = j + 1; k < genParticles->size(); k++) {
 
-                // Only electrons or muons
-                if (std::abs(genParticles->at(k).pdgId) != 11 &&
-                    std::abs(genParticles->at(k).pdgId) != 13)
-                    continue;
-
-                // Must be same flavour
-                if (std::abs(genParticles->at(j).pdgId) !=
-                    std::abs(genParticles->at(k).pdgId))
+                // Only electrons / positrons
+                if (std::abs(genParticles->at(k).pdgId) != 11)
                     continue;
 
                 // Must have opposite charge
-                if (genParticles->at(j).charge ==
-                    genParticles->at(k).charge)
+                if (genParticles->at(j).charge *
+                    genParticles->at(k).charge != -1)
                     continue;
 
                 // Four-momentum of particle 1
@@ -83,12 +86,12 @@ void generatedZ_custom() {
                 Float_t pz1 = genParticles->at(j).pz;
 
                 Float_t E1 = std::sqrt(
-                    px1*px1 + py1*py1 + pz1*pz1
+                    px1 * px1 +
+                    py1 * py1 +
+                    pz1 * pz1
                 );
 
-                TLorentzVector p1(
-                    px1, py1, pz1, E1
-                );
+                TLorentzVector p1(px1, py1, pz1, E1);
 
                 // Four-momentum of particle 2
                 Float_t px2 = genParticles->at(k).px;
@@ -96,19 +99,26 @@ void generatedZ_custom() {
                 Float_t pz2 = genParticles->at(k).pz;
 
                 Float_t E2 = std::sqrt(
-                    px2*px2 + py2*py2 + pz2*pz2
+                    px2 * px2 +
+                    py2 * py2 +
+                    pz2 * pz2
                 );
 
-                TLorentzVector p2(
-                    px2, py2, pz2, E2
-                );
+                TLorentzVector p2(px2, py2, pz2, E2);
 
                 // Z boson four-momentum
                 TLorentzVector Z = p1 + p2;
 
                 // Fill invariant mass
                 h_mass->Fill(Z.M());
+
+                // Only one pair per event
+                foundPair = true;
+                break;
             }
+
+            if (foundPair)
+                break;
         }
     }
 
@@ -122,7 +132,7 @@ void generatedZ_custom() {
 
     h_mass->Draw();
 
-    c1->SaveAs("generatedZ_custom_mass.png");
+    c1->SaveAs("Question4/generatedZ_custom_mass.png");
 
     f->Close();
 }

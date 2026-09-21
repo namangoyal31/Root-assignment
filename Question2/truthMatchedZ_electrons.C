@@ -15,7 +15,7 @@ void truthMatchedZ_electrons() {
 
   TH1F *h_deltaR = new TH1F(
       "h_deltaR",
-      "Reco-gen #DeltaR;#DeltaR;Events",
+      "Reco-gen #DeltaR;#DeltaR;Matched reconstructed electrons",
       100, 0., deltaRMax
   );
 

@@ -1,10 +1,10 @@
-// Generated Z -> e+e- invariant mass
+// Reconstructed Z -> e+e- invariant mass
 #include "TLorentzVector.h"
 #include <cmath>
 
 void reconstructedZ_electrons() {
 
-  TH1F *h_mass = new TH1F("h_mass", "Generated Z mass;M_{ee} [GeV];Events", 100, 40., 140.);
+  TH1F *h_mass = new TH1F("h_mass", "Reconstructed Z mass;M_{ee} [GeV];Events", 100, 40., 140.);
 
   TFile *f = new TFile("../ntuple_array.root");
   TTree *t1 = (TTree*)f->Get("ntupleProducer/tree");

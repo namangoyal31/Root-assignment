@@ -3,6 +3,7 @@
 #include "TH1F.h"
 #include "TCanvas.h"
 #include "TLorentzVector.h"
+#include "TSystem.h"
 
 #include <vector>
 #include <iostream>
@@ -14,26 +15,31 @@
 
 void reconstructedZ_custom() {
 
-    // Open the new file
-    TFile *f = TFile::Open("particleTree.root");
+    // Load dictionary for custom particle classes
+    if (gSystem->Load("Question4/libMyParticles.so") < 0) {
+        std::cout << "Error loading libMyParticles.so" << std::endl;
+        return;
+    }
+
+    // Open the new tree
+    TFile *f = TFile::Open("Question4/particleTree.root");
 
     if (!f || f->IsZombie()) {
         std::cout << "Error opening particleTree.root" << std::endl;
         return;
     }
 
-    // Get the tree
     TTree *T = (TTree*)f->Get("T");
 
     if (!T) {
         std::cout << "Error: tree T not found" << std::endl;
+        f->Close();
         return;
     }
 
-    // Vector of reconstructed electrons
+    // Vector stored in the tree
     std::vector<MyElectron> *electrons = nullptr;
 
-    // Connect branch to our vector
     T->SetBranchAddress("electrons", &electrons);
 
     // Z mass histogram
@@ -54,18 +60,16 @@ void reconstructedZ_custom() {
 
         T->GetEntry(i);
 
-        // Need at least two reconstructed electrons
-        if (electrons->size() < 2)
-            continue;
+        bool foundPair = false;
 
-        // Search for an opposite-charge pair
+        // Look for an opposite-charge electron pair
         for (size_t j = 0; j < electrons->size(); j++) {
 
             for (size_t k = j + 1; k < electrons->size(); k++) {
 
-                // Opposite charge requirement
-                if (electrons->at(j).charge ==
-                    electrons->at(k).charge)
+                // Must have opposite charge
+                if (electrons->at(j).charge *
+                    electrons->at(k).charge != -1)
                     continue;
 
                 // Four-momentum of electron 1
@@ -74,12 +78,12 @@ void reconstructedZ_custom() {
                 Float_t pz1 = electrons->at(j).pz;
 
                 Float_t E1 = std::sqrt(
-                    px1*px1 + py1*py1 + pz1*pz1
+                    px1 * px1 +
+                    py1 * py1 +
+                    pz1 * pz1
                 );
 
-                TLorentzVector p1(
-                    px1, py1, pz1, E1
-                );
+                TLorentzVector p1(px1, py1, pz1, E1);
 
                 // Four-momentum of electron 2
                 Float_t px2 = electrons->at(k).px;
@@ -87,19 +91,26 @@ void reconstructedZ_custom() {
                 Float_t pz2 = electrons->at(k).pz;
 
                 Float_t E2 = std::sqrt(
-                    px2*px2 + py2*py2 + pz2*pz2
+                    px2 * px2 +
+                    py2 * py2 +
+                    pz2 * pz2
                 );
 
-                TLorentzVector p2(
-                    px2, py2, pz2, E2
-                );
+                TLorentzVector p2(px2, py2, pz2, E2);
 
                 // Z boson four-momentum
                 TLorentzVector Z = p1 + p2;
 
                 // Fill invariant mass
                 h_mass->Fill(Z.M());
+
+                // Only one pair per event
+                foundPair = true;
+                break;
             }
+
+            if (foundPair)
+                break;
         }
     }
 
@@ -113,7 +124,7 @@ void reconstructedZ_custom() {
 
     h_mass->Draw();
 
-    c1->SaveAs("reconstructedZ_custom_mass.png");
+    c1->SaveAs("Question4/reconstructedZ_custom_mass.png");
 
     f->Close();
 }
