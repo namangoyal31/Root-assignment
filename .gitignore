@@ -1,0 +1,13 @@
+# Course input data
+ntuple_array.root
+
+# Local ROOT dictionary/build artifacts
+libMyEvent.so
+MyEventDict.cxx
+MyEventDict_rdict.pcm
+
+# ROOT/editor-generated files
+*.d
+*.pcm
+*.so
+*.rootmap
