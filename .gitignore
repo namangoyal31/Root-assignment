@@ -11,3 +11,13 @@ MyEventDict_rdict.pcm
 *.pcm
 *.so
 *.rootmap
+particleTree.root
+myhistos.root
+# Q4 custom class build artifacts
+MyParticleDict.cxx
+MyParticleDict_rdict.pcm
+libMyParticles.so
+
+
+# Generated ROOT data file
+particleTree.root
