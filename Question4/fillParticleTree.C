@@ -1,25 +1,36 @@
+#include "TSystem.h"
 #include "TFile.h"
 #include "TTree.h"
 
 #include <vector>
+#include <iostream>
 
 #include "MyGenParticle.h"
 #include "MyElectron.h"
 #include "MyMuon.h"
 
 void fillParticleTree() {
+    if (gSystem->Load("Question4/libMyParticles.so") < 0) {
+        std::cerr << "Error: could not load libMyParticles.so" << std::endl;
+        return;
+    }
 
-    // ------------------------------------------------------------
-    // Open input file
-    // ------------------------------------------------------------
+    TFile *fIn = TFile::Open("ntuple_array.root");
 
-    TFile *fIn = new TFile("../ntuple_array.root");
-    TTree *tIn = (TTree*)fIn->Get("ntupleProducer/tree");
+    if (!fIn || fIn->IsZombie()) {
+        std::cerr << "Error: could not open ntuple_array.root" << std::endl;
+        return;
+    }
 
+    TTree *tIn = nullptr;
+    fIn->GetObject("ntupleProducer/tree", tIn);
 
-    // ------------------------------------------------------------
-    // Generated particles
-    // ------------------------------------------------------------
+    if (!tIn) {
+        std::cerr << "Error: ntupleProducer/tree not found" << std::endl;
+        fIn->Close();
+        delete fIn;
+        return;
+    }
 
     Int_t nGenParticle;
 
@@ -44,11 +55,6 @@ void fillParticleTree() {
 
     tIn->SetBranchAddress("genParticleCharge", genParticleCharge);
     tIn->SetBranchAddress("genParticlePdgId", genParticlePdgId);
-
-
-    // ------------------------------------------------------------
-    // Reconstructed electrons
-    // ------------------------------------------------------------
 
     Int_t nElectron;
 
@@ -78,11 +84,6 @@ void fillParticleTree() {
 
     tIn->SetBranchAddress("electronCharge", electronCharge);
 
-
-    // ------------------------------------------------------------
-    // Reconstructed muons
-    // ------------------------------------------------------------
-
     Int_t nMuon;
 
     Float_t muonPx[100];
@@ -111,22 +112,23 @@ void fillParticleTree() {
 
     tIn->SetBranchAddress("muonCharge", muonCharge);
 
+    TFile *fOut = TFile::Open(
+        "Question4/particleTree.root",
+        "RECREATE"
+    );
 
-    // ------------------------------------------------------------
-    // Create output file and tree
-    // ------------------------------------------------------------
-
-    TFile *fOut = new TFile("particleTree.root", "RECREATE");
+    if (!fOut || fOut->IsZombie()) {
+        std::cerr << "Error: could not create Question4/particleTree.root"
+                  << std::endl;
+        fIn->Close();
+        delete fIn;
+        return;
+    }
 
     TTree *T = new TTree(
         "T",
         "Tree containing custom particle classes"
     );
-
-
-    // ------------------------------------------------------------
-    // Create vectors of custom classes
-    // ------------------------------------------------------------
 
     std::vector<MyGenParticle> *genParticles =
         new std::vector<MyGenParticle>();
@@ -137,38 +139,22 @@ void fillParticleTree() {
     std::vector<MyMuon> *muons =
         new std::vector<MyMuon>();
 
-
-    // ------------------------------------------------------------
-    // Create branches
-    // ------------------------------------------------------------
-
     T->Branch("genParticles", &genParticles);
     T->Branch("electrons", &electrons);
     T->Branch("muons", &muons);
 
+    Long64_t nentries = tIn->GetEntries();
 
-    // ------------------------------------------------------------
-    // Loop over events
-    // ------------------------------------------------------------
+    std::cout << "No. of entries is: "
+              << nentries << std::endl;
 
-    Int_t nentries = (Int_t)tIn->GetEntries();
-
-    cout << "No. of entries is: "
-         << nentries << endl;
-
-    for (Int_t i = 0; i < nentries; i++) {
+    for (Long64_t i = 0; i < nentries; i++) {
 
         tIn->GetEntry(i);
 
-        // Clear vectors for this event
         genParticles->clear();
         electrons->clear();
         muons->clear();
-
-
-        // --------------------------------------------------------
-        // Convert generated particles into MyGenParticle objects
-        // --------------------------------------------------------
 
         for (Int_t j = 0; j < nGenParticle; j++) {
 
@@ -185,11 +171,6 @@ void fillParticleTree() {
 
             genParticles->push_back(particle);
         }
-
-
-        // --------------------------------------------------------
-        // Convert reconstructed electrons into MyElectron objects
-        // --------------------------------------------------------
 
         for (Int_t j = 0; j < nElectron; j++) {
 
@@ -208,11 +189,6 @@ void fillParticleTree() {
             electrons->push_back(electron);
         }
 
-
-        // --------------------------------------------------------
-        // Convert reconstructed muons into MyMuon objects
-        // --------------------------------------------------------
-
         for (Int_t j = 0; j < nMuon; j++) {
 
             MyMuon muon(
@@ -230,25 +206,21 @@ void fillParticleTree() {
             muons->push_back(muon);
         }
 
-
-        // Store this event
         T->Fill();
     }
-
-
-    // ------------------------------------------------------------
-    // Write output
-    // ------------------------------------------------------------
 
     T->Write();
 
     fOut->Close();
     fIn->Close();
 
+    delete fOut;
+    delete fIn;
+
     delete genParticles;
     delete electrons;
     delete muons;
 
-    cout << "New tree written to particleTree.root"
-         << endl;
+    std::cout << "New tree written to Question4/particleTree.root"
+              << std::endl;
 }

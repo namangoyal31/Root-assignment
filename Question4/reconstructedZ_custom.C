@@ -15,13 +15,11 @@
 
 void reconstructedZ_custom() {
 
-    // Load dictionary for custom particle classes
     if (gSystem->Load("Question4/libMyParticles.so") < 0) {
         std::cout << "Error loading libMyParticles.so" << std::endl;
         return;
     }
 
-    // Open the new tree
     TFile *f = TFile::Open("Question4/particleTree.root");
 
     if (!f || f->IsZombie()) {
@@ -37,12 +35,10 @@ void reconstructedZ_custom() {
         return;
     }
 
-    // Vector stored in the tree
     std::vector<MyElectron> *electrons = nullptr;
 
     T->SetBranchAddress("electrons", &electrons);
 
-    // Z mass histogram
     TH1F *h_mass = new TH1F(
         "h_mass",
         "Reconstructed Z boson mass;M_{Z} [GeV];Events",
@@ -62,17 +58,14 @@ void reconstructedZ_custom() {
 
         bool foundPair = false;
 
-        // Look for an opposite-charge electron pair
         for (size_t j = 0; j < electrons->size(); j++) {
 
             for (size_t k = j + 1; k < electrons->size(); k++) {
 
-                // Must have opposite charge
                 if (electrons->at(j).charge *
                     electrons->at(k).charge != -1)
                     continue;
 
-                // Four-momentum of electron 1
                 Float_t px1 = electrons->at(j).px;
                 Float_t py1 = electrons->at(j).py;
                 Float_t pz1 = electrons->at(j).pz;
@@ -85,7 +78,6 @@ void reconstructedZ_custom() {
 
                 TLorentzVector p1(px1, py1, pz1, E1);
 
-                // Four-momentum of electron 2
                 Float_t px2 = electrons->at(k).px;
                 Float_t py2 = electrons->at(k).py;
                 Float_t pz2 = electrons->at(k).pz;
@@ -98,13 +90,10 @@ void reconstructedZ_custom() {
 
                 TLorentzVector p2(px2, py2, pz2, E2);
 
-                // Z boson four-momentum
                 TLorentzVector Z = p1 + p2;
 
-                // Fill invariant mass
                 h_mass->Fill(Z.M());
 
-                // Only one pair per event
                 foundPair = true;
                 break;
             }
@@ -114,7 +103,6 @@ void reconstructedZ_custom() {
         }
     }
 
-    // Draw histogram
     TCanvas *c1 = new TCanvas(
         "c1",
         "Reconstructed Z Mass",
@@ -124,7 +112,7 @@ void reconstructedZ_custom() {
 
     h_mass->Draw();
 
-    c1->SaveAs("Question4/reconstructedZ_custom_mass.png");
+    c1->SaveAs("Question4/Outputs/reconstructedZ_custom_mass.png");
 
     f->Close();
 }

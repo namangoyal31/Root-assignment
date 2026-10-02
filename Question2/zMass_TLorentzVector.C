@@ -1,5 +1,3 @@
-// Generated and reconstructed Z mass using TLorentzVector
-
 #include "TLorentzVector.h"
 #include "TH1F.h"
 #include "TFile.h"
@@ -24,10 +22,6 @@ void zMass_TLorentzVector() {
   TFile *f = new TFile("../ntuple_array.root");
   TTree *t1 = (TTree*)f->Get("ntupleProducer/tree");
 
-
-  // Generated particles
-
-
   Int_t nGenParticle;
 
   Float_t genParticlePx[100];
@@ -43,10 +37,6 @@ void zMass_TLorentzVector() {
   t1->SetBranchAddress("genParticlePz", genParticlePz);
   t1->SetBranchAddress("genParticleCharge", genParticleCharge);
   t1->SetBranchAddress("genParticlePdgId", genParticlePdgId);
-
-
-  // Reconstructed electrons
-
 
   Int_t nElectron;
 
@@ -66,26 +56,15 @@ void zMass_TLorentzVector() {
 
   cout << "No. of entries is: " << nentries << endl;
 
-
-  // Event loop
-
-
   for (Int_t i = 0; i < nentries; i++) {
 
     t1->GetEntry(i);
 
-    // ============================================================
-    // GENERATED Z
-    // ============================================================
-
     Int_t iGenElectron1 = -1;
     Int_t iGenElectron2 = -1;
 
-    // Find two generated electrons/positrons
-    // with opposite charge
     for (Int_t j = 0; j < nGenParticle; j++) {
 
-      // PDG ID: electron = 11, positron = -11
       if (std::abs(genParticlePdgId[j]) != 11)
         continue;
 
@@ -107,7 +86,6 @@ void zMass_TLorentzVector() {
         break;
     }
 
-    // Construct generated four-vectors
     if (iGenElectron1 != -1 && iGenElectron2 != -1) {
 
       Float_t genElectronE1 =
@@ -148,21 +126,14 @@ void zMass_TLorentzVector() {
           genElectronE2
       );
 
-      // Generated Z boson
       TLorentzVector genZ = genElectron1 + genElectron2;
 
       h_genMass->Fill(genZ.M());
     }
 
-    // ============================================================
-    // RECONSTRUCTED Z
-    // ============================================================
-
     Int_t iElectron1 = -1;
     Int_t iElectron2 = -1;
 
-    // Find two reconstructed electrons
-    // with opposite charge
     for (Int_t j = 0; j < nElectron; j++) {
 
       for (Int_t k = j + 1; k < nElectron; k++) {
@@ -180,7 +151,6 @@ void zMass_TLorentzVector() {
         break;
     }
 
-    // Construct reconstructed four-vectors
     if (iElectron1 != -1 && iElectron2 != -1) {
 
       Float_t electronE1 =
@@ -221,26 +191,17 @@ void zMass_TLorentzVector() {
           electronE2
       );
 
-      // Reconstructed Z boson
       TLorentzVector recoZ = electron1 + electron2;
 
       h_recoMass->Fill(recoZ.M());
     }
   }
 
-
-  // Draw generated Z mass
-
-
   TCanvas *c1 = new TCanvas();
 
   h_genMass->Draw();
 
   c1->SaveAs("zMass_generated_TLorentzVector.png");
-
-
-  // Draw reconstructed Z mass
-
 
   TCanvas *c2 = new TCanvas();
 

@@ -24,14 +24,9 @@ void createParticleTree() {
     std::vector<MyMuon> *muons =
         new std::vector<MyMuon>();
 
-    // Create branches
     T->Branch("genParticles", &genParticles);
     T->Branch("electrons", &electrons);
     T->Branch("muons", &muons);
-
-    // For Q4(b), we are only creating the tree structure.
-    // Q4(c) will fill these vectors with events.
-
     T->Write();
 
     f->Close();

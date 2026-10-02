@@ -1,4 +1,3 @@
-// Generated Z -> e+e- invariant mass
 #include "TLorentzVector.h"
 #include <cmath>
 

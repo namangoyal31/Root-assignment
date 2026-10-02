@@ -17,7 +17,3 @@ myhistos.root
 MyParticleDict.cxx
 MyParticleDict_rdict.pcm
 libMyParticles.so
-
-
-# Generated ROOT data file
-particleTree.root

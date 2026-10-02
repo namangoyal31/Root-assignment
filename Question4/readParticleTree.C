@@ -1,5 +1,6 @@
 #include "TFile.h"
 #include "TTree.h"
+#include "TSystem.h"
 
 #include <iostream>
 #include <vector>
@@ -10,37 +11,50 @@
 
 void readParticleTree() {
 
-    // Open the new file
-    TFile *f = TFile::Open("particleTree.root");
+    if (gSystem->Load("Question4/libMyParticles.so") < 0) {
+        std::cerr << "Error: could not load libMyParticles.so"
+                  << std::endl;
+        return;
+    }
+
+    TFile *f = TFile::Open("Question4/particleTree.root");
 
     if (!f || f->IsZombie()) {
-        std::cout << "Error opening particleTree.root" << std::endl;
+        std::cerr << "Error opening Question4/particleTree.root"
+                  << std::endl;
         return;
     }
 
-    // Get the tree
-    TTree *T = (TTree*)f->Get("T");
+    TTree *T = nullptr;
+    f->GetObject("T", T);
 
     if (!T) {
-        std::cout << "Error: tree T not found" << std::endl;
+        std::cerr << "Error: tree T not found" << std::endl;
+        f->Close();
+        delete f;
         return;
     }
 
-    // Pointers to the vectors stored in the tree
     std::vector<MyGenParticle> *genParticles = nullptr;
     std::vector<MyElectron> *electrons = nullptr;
     std::vector<MyMuon> *muons = nullptr;
 
-    // Connect tree branches to our vectors
     T->SetBranchAddress("genParticles", &genParticles);
     T->SetBranchAddress("electrons", &electrons);
     T->SetBranchAddress("muons", &muons);
 
     Long64_t nentries = T->GetEntries();
 
-    std::cout << "No. of entries is: " << nentries << std::endl;
+    std::cout << "No. of entries is: "
+              << nentries << std::endl;
 
-    // Read the first event as a test
+    if (nentries == 0) {
+        std::cerr << "Error: tree contains no entries" << std::endl;
+        f->Close();
+        delete f;
+        return;
+    }
+
     T->GetEntry(0);
 
     std::cout << "Event 0:" << std::endl;
@@ -51,8 +65,8 @@ void readParticleTree() {
     std::cout << "  Muons = "
               << muons->size() << std::endl;
 
-    // Print one generated particle if present
     if (!genParticles->empty()) {
+
         const MyGenParticle &p = genParticles->at(0);
 
         std::cout << "\nFirst generated particle:" << std::endl;
